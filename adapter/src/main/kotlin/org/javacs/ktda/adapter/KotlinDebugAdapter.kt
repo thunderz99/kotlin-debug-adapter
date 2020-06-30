@@ -100,13 +100,16 @@ class KotlinDebugAdapter(
 
 		val vmArguments:String? = (args["vmArguments"] as? String)
 
+		var cwd = (args["cwd"] as? String).let { if(it.isNullOrBlank()) projectRoot else Paths.get(it) }
+
 		setupCommonInitializationParams(args)
 
 		val config = LaunchConfiguration(
 			debugClassPathResolver(listOf(projectRoot)).classpathOrEmpty,
 			mainClass,
 			projectRoot,
-			vmArguments ?: ""
+			vmArguments ?: "",
+			cwd
 		)
 		debuggee = launcher.launch(
 			config,

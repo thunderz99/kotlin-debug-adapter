@@ -1,7 +1,9 @@
 package sample.workspace
 
 class App {
-    private val member: String = System.getProperty("test")
+    private val member: String = "test"
+    private val foo: String? = System.getProperty("foo")
+    private val cwd: String = System.getProperty("user.dir")
     val greeting: String
         get() {
             val local: Int = 123

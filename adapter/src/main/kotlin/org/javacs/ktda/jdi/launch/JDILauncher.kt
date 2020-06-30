@@ -13,6 +13,7 @@ import com.sun.jdi.VirtualMachineManager
 import com.sun.jdi.connect.Connector
 import com.sun.jdi.connect.LaunchingConnector
 import com.sun.jdi.connect.AttachingConnector
+import com.sun.tools.jdi.KDACommandLineLauncher
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Files
@@ -20,6 +21,7 @@ import java.net.URLEncoder
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors
+import org.javacs.kt.LOG
 
 class JDILauncher(
 	private val attachTimeout: Int = 50,
@@ -57,6 +59,7 @@ class JDILauncher(
 			args["suspend"]!!.setValue("true")
 			args["options"]!!.setValue(formatOptions(config))
 			args["main"]!!.setValue(formatMainClass(config))
+			args["cwd"]!!.setValue(config.cwd.toAbsolutePath().toString())
 		}
 	
 	private fun createAttachArgs(config: AttachConfiguration, connector: Connector): Map<String, Connector.Argument> = connector.defaultArguments()
@@ -72,9 +75,11 @@ class JDILauncher(
 	
 	private fun createLaunchConnector(): LaunchingConnector = vmManager.launchingConnectors()
 		// Workaround for JDK 11+ where the first launcher (RawCommandLineLauncher) does not properly support args
-		.let { it.find { it.javaClass.name == "com.sun.tools.jdi.SunCommandLineLauncher" } ?: it.firstOrNull() }
-		?: throw KotlinDAException("Could not find a launching connector (for a new debuggee VM)")
-	
+		.let {
+			LOG.info("connectors:{}", it)
+			it.find { it.javaClass.name == KDACommandLineLauncher::class.java.name } ?: it.firstOrNull()
+		} ?: throw KotlinDAException("Could not find a launching connector (for a new debuggee VM)")
+
 	private fun sourcesRootsOf(projectRoot: Path): Set<Path> = projectRoot.resolve("src")
 		.let(Files::list) // main, test
 		.filter { Files.isDirectory(it) }
